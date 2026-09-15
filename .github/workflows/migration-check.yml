@@ -22,6 +22,9 @@
 #   SUPABASE_ACCESS_TOKEN … https://supabase.com/dashboard/account/tokens で発行
 #   SUPABASE_PROJECT_REF  … プロジェクト参照 ID（ダッシュボードの URL に含まれる）
 #   SUPABASE_DB_PASSWORD  … 任意。link / push が DB パスワードを要求する場合のみ
+#
+#   **未登録の場合このワークフローは失敗する。** 何も検査できていない
+#   状態を緑で隠さないため。
 name: Migration Check
 
 on:
@@ -45,28 +48,48 @@ jobs:
         with:
           node-version: 20
 
-      - name: Secrets の有無を確認
-        id: guard
+      # 未設定なら **失敗させる**。
+      # 当初は warning を出して exit 0 にしていたが、それだと Secrets を
+      # 登録しない限り「中身が空のまま緑」が並び続ける。2026-08-27 に
+      # 実際にこれが起き、0026 の適用忘れを取りこぼした。検知しないより
+      # 悪い（緑が偽の安心を与える）ので、素通りは廃止した。
+      - name: Secrets が登録されているか確認
         env:
           TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           REF: ${{ secrets.SUPABASE_PROJECT_REF }}
         run: |
-          if [ -z "$TOKEN" ] || [ -z "$REF" ]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::warning title=Migration Check は未設定です::SUPABASE_ACCESS_TOKEN と SUPABASE_PROJECT_REF を Secrets に登録するまで、このチェックは何も検査しません。"
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
+          missing=""
+          [ -z "$TOKEN" ] && missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -z "$REF" ]   && missing="$missing SUPABASE_PROJECT_REF"
+          if [ -n "$missing" ]; then
+            echo "::error title=Migration Check が設定されていません::未登録の Secrets:${missing}"
+            {
+              echo "## Migration Check が設定されていません"
+              echo ""
+              echo "未登録の Secrets:${missing}"
+              echo ""
+              echo "**このチェックは何も検査できていません。** 本番に未適用の"
+              echo "マイグレーションがあっても気づけない状態です。"
+              echo ""
+              echo "登録手順（リポジトリの admin 権限が必要）:"
+              echo ""
+              echo "1. https://supabase.com/dashboard/account/tokens でトークンを発行"
+              echo "2. Settings -> Secrets and variables -> Actions に登録"
+              echo "   - SUPABASE_ACCESS_TOKEN … 発行したトークン"
+              echo "   - SUPABASE_PROJECT_REF … プロジェクト参照 ID"
+              echo "3. Actions -> Migration Check -> Run workflow で動作確認"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
           fi
+          echo "Secrets は登録されています。"
 
       - name: プロジェクトを link
-        if: steps.guard.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: npx --yes supabase@latest link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
 
       - name: 未適用のマイグレーションを検出
-        if: steps.guard.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
