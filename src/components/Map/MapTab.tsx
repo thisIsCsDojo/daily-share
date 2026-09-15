@@ -23,6 +23,7 @@ import {
   FormLabel,
 } from '@chakra-ui/react'
 import { avatarColor } from '../../lib/avatarColor'
+import { formatLocationAge } from './locationAge'
 import { supabase } from '../../lib/supabase'
 import { fetchPublicProfiles } from '../../lib/profiles'
 import { useAuth } from '../../hooks/useAuth'
@@ -220,6 +221,8 @@ export default function MapTab() {
           id: loc.userId,
           name: knownNames.get(loc.userId) ?? 'メンバー',
           pos: { lat: loc.lat as number, lng: loc.lng as number },
+          // 「いつ時点の位置か」を一覧にも出す（#127）
+          updatedAt: loc.updatedAt,
         })),
     [markers, knownNames, user?.id],
   )
@@ -540,7 +543,12 @@ export default function MapTab() {
                   >
                     <HStack spacing={2}>
                       <Avatar size="xs" name={p.name} bg={avatarColor(p.id)} color="white" />
-                      <Text fontSize="sm">{p.name}</Text>
+                      <Text fontSize="sm" flex={1} noOfLines={1}>
+                        {p.name}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" flexShrink={0}>
+                        {formatLocationAge(p.updatedAt)}
+                      </Text>
                     </HStack>
                   </ListItem>
                 ))
@@ -591,9 +599,16 @@ export default function MapTab() {
               icon={MapPin(loc.userId === user?.id ? '#2B6CB0' : undefined)}
             >
               <Popup>
-                {loc.userId === user?.id
-                  ? 'あなた'
-                  : knownNames.get(loc.userId) ?? 'メンバー'}
+                <Text fontWeight="semibold">
+                  {loc.userId === user?.id
+                    ? 'あなた'
+                    : knownNames.get(loc.userId) ?? 'メンバー'}
+                </Text>
+                {/* いつ時点の位置か（#127）。自分のピンにも出して、
+                    ライブ共有が実際に送れているかの確認に使えるようにする。 */}
+                <Text fontSize="xs" color="gray.600">
+                  {formatLocationAge(loc.updatedAt)}
+                </Text>
               </Popup>
             </Marker>
           ))}
