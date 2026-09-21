@@ -42,11 +42,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
 
       # 未設定なら **失敗させる**。
       # 当初は warning を出して exit 0 にしていたが、それだと Secrets を
@@ -122,5 +122,22 @@ jobs:
             exit 1
           fi
 
-          echo "::error title=判定できませんでした::db push --dry-run の出力を解釈できませんでした。上のログを確認してください。"
+          # 解釈できない＝たいてい接続やトークンの失敗。原因をログの奥に
+          # 埋めず、末尾をそのままアノテーションと Summary に出す。
+          # 2026-09-15〜20 に「判定できませんでした」だけが5日間出続け、
+          # 実際の原因（トークンの権限不足 403）が誰にも読めなかった。
+          tail_out="$(echo "$out" | tail -n 5 | paste -sd ' ' -)"
+          echo "::error title=判定できませんでした::${tail_out}"
+          {
+            echo "## db push --dry-run の出力を解釈できませんでした"
+            echo ""
+            echo "接続かトークンの問題の可能性が高いです。出力の末尾:"
+            echo ""
+            echo '~~~'
+            echo "$out" | tail -n 15
+            echo '~~~'
+            echo ""
+            echo "- login role status 403 → トークンの権限不足。Supabase 組織の Owner/Admin で発行し直すか、SUPABASE_DB_PASSWORD を登録して直接接続にする"
+            echo "- password を求められる → SUPABASE_DB_PASSWORD を登録する"
+          } >> "$GITHUB_STEP_SUMMARY"
           exit 1

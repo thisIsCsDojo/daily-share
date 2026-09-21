@@ -16,11 +16,17 @@ npm run build-storybook # Build Storybook static site
 ### Supabase
 
 ```bash
-npx supabase start                          # Start local Supabase
-npx supabase gen types --lang=typescript --local > src/types/database.ts  # Regenerate DB types
-npx supabase db push --dry-run              # 適用対象を確認（必ず先に実行する）
-npx supabase db push                        # Apply migrations to remote
+npm run db:dry:staging    # staging に対する dry-run
+npm run db:push:staging   # staging に適用（ローカル開発・検証用）
+npm run db:dry:prod       # 本番に対する dry-run
+npm run db:push:prod      # 本番に適用（"production" の確認入力あり）
+
+npx supabase gen types --lang=typescript --project-id <ref> > src/types/database.ts  # 型を再生成（Docker 不要）
 ```
+
+> **素の `npx supabase db push` は使わないこと。** CLI は link 中の 1 プロジェクトにしか
+> 流せず、staging のつもりで本番を触る事故が起きる。`scripts/db.mjs` は対象を引数で
+> 受け取り、実行後に必ず link を staging へ戻す。本番への適用は確認入力を要求する。
 
 > ## ⚠️ マイグレーションを本番に適用する前に必ず読む
 >
@@ -122,7 +128,23 @@ Supabase は `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON FUNCTIONS TO anon, authe
 
 ## Environment
 
-Copy `.env.example` to **`.env.local`** and fill in your Supabase project URL and anon key.
+### 本番と staging は別プロジェクト（2026-09-21 に分離）
+
+| 環境 | Supabase project ref | リージョン | 用途 |
+|---|---|---|---|
+| **production** | `mdetcjwmwzjeupheppgo` | ソウル | 友達が使う。Vercel の Production・Google OAuth がこちらを向く。Supabase 上の名前は `daily-share` |
+| **staging** | `zlptsmiqfzwisgerwwet` | 東京 | ローカル開発・検証。2026-09-21 に新規作成。Supabase 上の名前は `daily-share-staging` |
+
+**ローカル開発と検証は staging で行う。本番を触って検証しない。** 分離前は同一プロジェクト
+だったため「本番で検証するしかない」構造になっていたが、それは解消済み。
+
+本番がソウルなのは作成時の取り違えだが、**本番はソウルのまま動かさない**。東京へ移すには
+Google OAuth と Vercel（いずれも SnowHam さん管理）の変更と全員の再登録が要り、配布前に
+動いている本番を動かす代償が大きすぎるため。ソウル↔日本の遅延差は 30ms 程度で体感できない。
+staging（東京）はマイグレーション 27 本を空の DB へ頭から適用し、匿名プローブで本番と
+完全一致することを確認している。
+
+Copy `.env.example` to **`.env.local`** and fill in the **staging** project URL and anon key.
 
 > **`.env` ではなく `.env.local` を使うこと。** `.env` は過去に追跡されており（`4d6f8ea` で untrack）、古いブランチ 26 本が今も `.env` をツリーに持っている。gitignore は「切替先のコミットが追跡しているファイル」を守れないため、それらのブランチと `main` を `git checkout` で行き来すると**ディスク上の `.env` が消える**。`.env.local` はどのブランチも追跡していないので、この問題が起きない。Vite は `.env.local` を優先して読むため設定変更は不要。
 
