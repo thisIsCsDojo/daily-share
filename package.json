@@ -11,7 +11,11 @@
     "test:watch": "vitest --project unit",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "db:dry:staging": "node scripts/db.mjs dry staging",
+    "db:push:staging": "node scripts/db.mjs push staging",
+    "db:dry:prod": "node scripts/db.mjs dry prod",
+    "db:push:prod": "node scripts/db.mjs push prod"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.2.4",
