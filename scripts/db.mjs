@@ -24,10 +24,10 @@ import { createInterface } from 'node:readline'
 
 // 公開識別子なのでここに直書きしてよい（URL や anon key と同じ扱い）。
 const PROJECTS = {
-  // 東京。友達が使う本番。2026-09-21 にソウルから移行。
-  prod: 'zlptsmiqfzwisgerwwet',
-  // ソウル。旧本番を staging として流用。ローカル開発・検証はこちら。
-  staging: 'mdetcjwmwzjeupheppgo',
+  // ソウル。友達が使う本番（Supabase 上の名前は daily-share）。
+  prod: 'mdetcjwmwzjeupheppgo',
+  // 東京。2026-09-21 に新規作成した staging（daily-share-staging）。ローカル開発・検証はこちら。
+  staging: 'zlptsmiqfzwisgerwwet',
 }
 
 const [, , action, target] = process.argv
@@ -47,7 +47,7 @@ function supabase(...args) {
 async function confirmProd() {
   const rl = createInterface({ input: process.stdin, output: process.stdout })
   const answer = await new Promise((res) =>
-    rl.question('\n本番（東京・友達が使っている DB）に適用します。続けるなら "production" と入力: ', res),
+    rl.question('\n本番（ソウル・友達が使っている DB）に適用します。続けるなら "production" と入力: ', res),
   )
   rl.close()
   if (answer.trim() !== 'production') {

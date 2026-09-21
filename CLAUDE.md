@@ -132,15 +132,17 @@ Supabase は `ALTER DEFAULT PRIVILEGES ... GRANT ALL ON FUNCTIONS TO anon, authe
 
 | 環境 | Supabase project ref | リージョン | 用途 |
 |---|---|---|---|
-| **production** | `zlptsmiqfzwisgerwwet` | 東京 | 友達が使う。Vercel の Production がこちらを向く |
-| **staging** | `mdetcjwmwzjeupheppgo` | ソウル | ローカル開発・検証・Vercel の Preview。旧本番を流用 |
+| **production** | `mdetcjwmwzjeupheppgo` | ソウル | 友達が使う。Vercel の Production・Google OAuth がこちらを向く。Supabase 上の名前は `daily-share` |
+| **staging** | `zlptsmiqfzwisgerwwet` | 東京 | ローカル開発・検証。2026-09-21 に新規作成。Supabase 上の名前は `daily-share-staging` |
 
 **ローカル開発と検証は staging で行う。本番を触って検証しない。** 分離前は同一プロジェクト
 だったため「本番で検証するしかない」構造になっていたが、それは解消済み。
 
-旧本番がソウルだったのは作成時の取り違え。Supabase はリージョンを後から変更できないため、
-東京に新規作成して移行した。マイグレーション 27 本を空の DB へ頭から適用し、匿名プローブで
-旧本番と完全一致することを確認している。
+本番がソウルなのは作成時の取り違えだが、**本番はソウルのまま動かさない**。東京へ移すには
+Google OAuth と Vercel（いずれも SnowHam さん管理）の変更と全員の再登録が要り、配布前に
+動いている本番を動かす代償が大きすぎるため。ソウル↔日本の遅延差は 30ms 程度で体感できない。
+staging（東京）はマイグレーション 27 本を空の DB へ頭から適用し、匿名プローブで本番と
+完全一致することを確認している。
 
 Copy `.env.example` to **`.env.local`** and fill in the **staging** project URL and anon key.
 

@@ -18,14 +18,13 @@
 - 位置情報の取得・保存・共有について実態と一致させる
 
 ### 2. 環境の分離（staging / production） ✅ 2026-09-21 完了
-- [x] 本番用（東京 `zlptsmiqfzwisgerwwet`）と staging 用（ソウル `mdetcjwmwzjeupheppgo`、旧本番を流用）に分離
-- [x] マイグレーション 27 本を本番へ頭から適用し、旧本番と一致することを匿名プローブで検証
+- [x] 本番（ソウル `mdetcjwmwzjeupheppgo`、従来どおり）と staging（東京 `zlptsmiqfzwisgerwwet`、新規作成）に分離
+- [x] マイグレーション 27 本を staging へ頭から適用し、本番と一致することを匿名プローブで検証
 - [x] `npm run db:push:prod` / `db:push:staging` で適用先を明示する仕組みを追加（`scripts/db.mjs`）
-- [ ] Vercel の **Production** 環境変数を東京プロジェクトに切り替え
-- [ ] Vercel の **Preview** 環境変数を staging（ソウル）に設定
-- [ ] Google Cloud Console の OAuth リダイレクト URI に `https://zlptsmiqfzwisgerwwet.supabase.co/auth/v1/callback` を追加
-- [ ] 東京プロジェクトの Auth 設定（Google 有効化・Site URL・Redirect URLs・autoconfirm）
-- [ ] Migration Check の Secrets（`SUPABASE_PROJECT_REF` / `SUPABASE_DB_PASSWORD`）を**東京プロジェクトの値に更新** ← 忘れると CI が staging を監視し続ける
+- [x] 本番は動かさない方針に決定（Vercel / Google OAuth の切替は不要。SnowHam さんに頼むことは無い）
+- [ ] ローカルの `.env.local` を staging（東京）に向ける
+- [ ] Migration Check の Secrets（`SUPABASE_PROJECT_REF`）が**本番（ソウル）**を指していることを確認 ← 9/21 に一時東京へ変えたので戻す
+- [ ] Vercel の **Preview** 環境変数を staging（東京）に設定（任意。SnowHam さんの操作が要る）
 - [ ] Sentry の DSN を本番用に（必要なら）
 
 ### 3. マイグレーション運用の固定化
