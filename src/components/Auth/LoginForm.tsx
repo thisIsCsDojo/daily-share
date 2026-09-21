@@ -13,13 +13,12 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
-  const { signInWithEmail, signInWithGoogle, sendPasswordReset } = useAuth()
+  const { signInWithEmail, signInWithGoogle } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
-  const [resetSent, setResetSent] = useState(false)
-  const [resetting, setResetting] = useState(false)
+  const [showResetNotice, setShowResetNotice] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -30,20 +29,12 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
     if (result.error) setError(result.error.message)
   }
 
-  const handleReset = async () => {
+  // SMTP 未設定（#46）のため再設定メールは届かない。届かないメールを
+  // 「送信しました」と出すと利用者が待ち続けるので、送信せず案内だけ出す。
+  // SMTP が入ったら useAuth の sendPasswordReset を呼ぶ形に戻す。
+  const handleReset = () => {
     setError(null)
-    if (!email.trim()) {
-      setError('パスワード再設定メールを送るには、メールアドレスを入力してください。')
-      return
-    }
-    setResetting(true)
-    const { error } = await sendPasswordReset(email.trim())
-    setResetting(false)
-    if (error) {
-      setError(error.message)
-      return
-    }
-    setResetSent(true)
+    setShowResetNotice(true)
   }
 
   return (
@@ -98,9 +89,13 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
               <Button type="submit" isLoading={isLoading} w="full" mt={1}>
                 ログイン
               </Button>
-              {resetSent ? (
-                <Text fontSize="xs" color="success.600" textAlign="center">
-                  パスワード再設定メールを送信しました。メールのリンクから設定してください。
+              {showResetNotice ? (
+                <Text fontSize="xs" color="gray.600" textAlign="center">
+                  パスワードの再設定は現在メールでは行えません。運営者（
+                  <Text as="a" href="mailto:urushi1413@gmail.com" color="primary.600" fontWeight="medium">
+                    urushi1413@gmail.com
+                  </Text>
+                  ）に連絡してください。Google でログインしている方はパスワード不要です。
                 </Text>
               ) : (
                 <Text
@@ -109,10 +104,9 @@ export function LoginForm({ onSwitchToSignup }: LoginFormProps) {
                   textAlign="center"
                   cursor="pointer"
                   fontWeight="medium"
-                  opacity={resetting ? 0.6 : 1}
-                  onClick={() => !resetting && handleReset()}
+                  onClick={handleReset}
                 >
-                  {resetting ? '送信中...' : 'パスワードをお忘れですか？'}
+                  パスワードをお忘れですか？
                 </Text>
               )}
             </VStack>
