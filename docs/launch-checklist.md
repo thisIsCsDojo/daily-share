@@ -17,11 +17,15 @@
 - 弁護士のレビューを受ける
 - 位置情報の取得・保存・共有について実態と一致させる
 
-### 2. 環境の分離（staging / production）
-現状は単一の Supabase プロジェクトを開発・本番兼用している。リリース前に：
-- **本番用と staging 用の Supabase プロジェクトを分離**して作成
-- それぞれの `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` を Vercel の環境（Production / Preview）に設定
-- ローカルは `.env`（ローカル or staging）を使用
+### 2. 環境の分離（staging / production） ✅ 2026-09-21 完了
+- [x] 本番（ソウル `mdetcjwmwzjeupheppgo`、従来どおり）と staging（東京 `zlptsmiqfzwisgerwwet`、新規作成）に分離
+- [x] マイグレーション 27 本を staging へ頭から適用し、本番と一致することを匿名プローブで検証
+- [x] `npm run db:push:prod` / `db:push:staging` で適用先を明示する仕組みを追加（`scripts/db.mjs`）
+- [x] 本番は動かさない方針に決定（Vercel / Google OAuth の切替は不要。SnowHam さんに頼むことは無い）
+- [ ] ローカルの `.env.local` を staging（東京）に向ける
+- [ ] Migration Check の Secrets（`SUPABASE_PROJECT_REF`）が**本番（ソウル）**を指していることを確認 ← 9/21 に一時東京へ変えたので戻す
+- [ ] Vercel の **Preview** 環境変数を staging（東京）に設定（任意。SnowHam さんの操作が要る）
+- [ ] Sentry の DSN を本番用に（必要なら）
 
 ### 3. マイグレーション運用の固定化
 今回、本番DBのマイグレーション履歴が空で `supabase db push` が破壊的な `0001`（全テーブル DROP）から流そうとする事故が起きかけた。今後は：
